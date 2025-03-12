@@ -1,0 +1,342 @@
+
+// СУБД:       PostgreSQL   MongoDB
+// port:       5432         27017
+// clients:
+// - CLI:      psql         mongosh
+// - GUI:      PGAdmin, ... Compass
+//             VSCode Ext   VSCode Ext
+//             Server App   Server App
+// ---------------------------------
+
+// --- Start/stop mongo ---
+// sudo systemctl status mongod
+
+// sudo systemctl is-enabled mongod
+// sudo systemctl enable mongod
+
+// sudo systemctl start mongod
+// sudo systemctl stop mongod
+// --------------------------------
+
+// ----- SHELL COMMANDS -----
+// mongosh - start console client
+// help    - shell help
+// show dbs
+// use db_name
+// show collections
+// db - поточна БД
+// exit    - exit console client
+
+// db.help() - database class help
+// db.getMongo()
+// --------------------------------
+
+// --- collection (table) / document (row)
+// [{},{},...] - collection
+// {} - document
+// --------------------------------
+
+// ----- CRUD -----
+
+// C insertOne({})/insertMany([])          INSERT
+// R find({},{}).sort({}).limit().skip()   SELECT
+// U updateOne/updateMany({фильтр},{})     UPDATE
+// D deleteOne/deleteMany({фильтр})        DELETE
+
+use('new_db')
+
+// --- C - INSERT - insertOne({})/insertMany([])
+
+db.users.insertOne({ name: 'Test007', surname: 'Testovych' })
+db.users.insertOne({ name: 'Ivo', age: 20 })
+db.users.insertMany([
+  {
+    firstName: 'Test2',
+    lastName: 'Testovych1',
+    isMarried: false,
+    email: 'mail@test.com',
+    birthday: new Date(2000, 0, 1),
+    gender: 'male'
+  },
+  {
+    firstName: 'Test2',
+    lastName: 'Testovych2',
+    isMarried: true,
+    email: 'mail@test.com',
+    birthday: new Date(1990, 8, 1),
+    gender: 'male',
+    childrenCount: 0
+  },
+  {
+    firstName: 'Test4',
+    lastName: 'Testovych4',
+    isMarried: true,
+    email: 'mail@test.com',
+    birthday: new Date(1990, 8, 1),
+    gender: 'male',
+    childrenCount: 4,
+    languages: ['UA', 'US', 'PL'],
+    phoneNumbers: {
+      home: '+380123456789',
+      job: '+380123456788'
+    }
+  }
+])
+
+// --- R - SELECT - find()
+
+db.users.find()
+
+// пагінація - LIMIT OFFSET - limit skip
+db.users.find().limit(1).skip(2)
+
+// сортування - ORDER BY - sort
+//  1 - ASC
+// -1 - DESC
+db.users.find().sort({ birthday: -1 })
+
+// пагінація + сортування
+// ORDER BY first_name, last_name
+// LIMIT 3 OFFSET 3 // 2 page / 3
+db.users.find().sort({ firstName: 1, lastName: 1 }).limit(3).skip(3)
+
+// проєкція
+// SELECT first_name ...
+db.users.find({}, { firstName: 1, email: 1, _id: 0 })
+
+// ----- проекція ---- SELECT firstName
+//           WHERE    SELECT firstName
+//               \    /
+// db.users.find({}, { firstName: 1 })
+// db.users.find({}, { firstName: 1, _id: 0 })
+
+// фільтрація - WHERE - find({})
+// користувачі Test1
+db.users.find({ firstName: 'Test1' })
+
+// WHERE firstName = 'Test1' AND isMarried = false
+db.users.find({ firstName: 'Test1', isMarried: false })
+
+// WHERE firstName = 'Test1' OR lastName = 'Testovych4'
+db.users.find({ $or: [{ firstName: 'Test1' }, { lastName: 'Testovych4' }] })
+
+// WHERE childrenCount > 1
+db.users.find({ childrenCount: { $gt: 0 } })
+
+// birthday 1990, 1991, 1992
+db.users.find({
+  birthday: { $gte: new Date(1990, 0, 1) },
+  birthday: { $lte: new Date(1992, 11, 31) }
+})
+
+// Загальний вигляд:
+// db.collection.find({ фільтрация }, { проекція }).sort({}).limit().skip()
+
+// Task:
+db.sales.insertMany([
+  {
+    item: 'abc',
+    price: 10,
+    quantity: 2,
+    date: new Date('2014-03-01T08:00:00Z')
+  },
+  {
+    item: 'jkl',
+    price: 20,
+    quantity: 1,
+    date: new Date('2014-03-01T09:00:00Z')
+  },
+  {
+    item: 'xyz',
+    price: 5,
+    quantity: 10,
+    date: new Date('2014-03-15T09:00:00Z')
+  },
+  {
+    item: 'xyz',
+    price: 5,
+    quantity: 20,
+    date: new Date('2014-04-04T11:21:39.736Z')
+  },
+  {
+    item: 'abc',
+    price: 10,
+    quantity: 10,
+    date: new Date('2014-04-04T21:23:13.331Z')
+  },
+  {
+    item: 'def',
+    price: 7.5,
+    quantity: 5,
+    date: new Date('2015-06-04T05:08:13Z')
+  },
+  {
+    item: 'def',
+    price: 7.5,
+    quantity: 10,
+    date: new Date('2015-09-10T08:43:00Z')
+  },
+  {
+    item: 'abc',
+    price: 10,
+    quantity: 5,
+    date: new Date('2016-02-06T20:20:13Z')
+  }
+])
+
+// Знайти товари з назвою "abc" // WHERE
+db.sales.find({ item: 'abc' })
+// Знайти товари за ціною 10, продані в кількості 2 // WHERE + AND
+db.sales.find({ price: 10, quantity: 2 }, {})
+// Знайти найдорожчий товар // LIMIT + ORDER BY
+db.sales.find().sort({ price: -1 }).limit(1)
+// *Знайти товари 'abc' і 'jkl' (в результат включити тільки назву і дату продажу) // WHERE + OR + проєкція
+db.sales.find({ $or: [{ item: 'abc' }, { item: 'jkl' }] }, { item: 1, date: 1 })
+
+// U - UPDATE - updateOne/updateMany
+// db.collection.updateOne(<filter>, <update>, <options>)
+// db.collection.updateMany(<filter>, <update>, <options>)
+// db.collection.replaceOne(<filter>, <update>, <options>)
+
+// зАмінити інфо про користувача з іменем Test4:
+// db.users.updateOne({ firstName: 'Test4' }, { firstName: 'Test5' })
+
+// змінити інфо про користувача з іменем Test4 (завдяки $set):
+db.users.updateOne({ firstName: 'Test4' }, { $set: { firstName: 'Test5' } })
+
+db.users.updateOne(
+  { _id: ObjectId('65be52c3ec68b53d43b87665') },
+  { $set: { name: 'Grut' } }
+)
+
+// D - DELETE - deleteOne/Many({})
+db.users.deleteOne({ _id: ObjectId('65be5389edbd68793f552219') })
+
+// ----- AGGREGATION PIPELINE -----
+
+// GROUP BY - $group stage in aggregation pipeline
+
+// Відобразити кількість замовлень для кожного товару
+// $group - stage operation
+// '$item' - prop
+db.sales.aggregate([
+  {
+    $group: {
+      _id: '$item',
+      itemsCount: {
+        $count: {}
+      }
+    }
+  }
+])
+
+// Відобразити сумарну кількість замовлених одиниць для кожного товару
+db.sales.aggregate([
+  {
+    $group: {
+      _id: '$item',
+      totalSold: {
+        $sum: '$quantity'
+      }
+    }
+  }
+])
+
+// Зв'язки
+
+// SQL:
+// users(_id, name, )
+// tasks(_id, value, user_id)
+
+// MongoDB:
+// users(_id, name, task:[{ value},{value}]) - ненормалізовані
+
+// tasks(_id, value, user:{name, ...}) --- дублювання (ПОГАНО!)
+
+// users(_id, name, )
+// tasks(_id, value, userId) - нормалізовані
+
+db.tasks1.insertMany([
+  { value: 'To do HW', userId: ObjectId('644d2b46c10aa9ca91e6d78c') },
+  { value: 'Walk', userId: ObjectId('644d2b46c10aa9ca91e6d78c') },
+  { value: 'Read', userId: ObjectId('644d2b46c10aa9ca91e6d78d') },
+  { value: 'Go to the sea', userId: ObjectId('644d2b46c10aa9ca91e6d78e') },
+  { value: 'Sleep', userId: ObjectId('644d2b46c10aa9ca91e6d78d') },
+  { value: 'Visit parents', userId: ObjectId('644d2b46c10aa9ca91e6d78e') },
+  {
+    value: 'To do children`s HW',
+    userId: ObjectId('644d2b46c10aa9ca91e6d78e')
+  },
+  { value: 'Rest', userId: ObjectId('644d2b46c10aa9ca91e6d78e') }
+])
+
+// SELECT * FROM users1 LEFT JOIN tasks1 ON users1._id=tasks1.userId
+
+// sql:
+// user1 task1
+// user1 task2
+// user2 task3
+// user3 null
+
+// MongoDb:
+// user1 [task1, task2]
+// user2 [task3]
+// user3 []
+
+// $lookup - JOIN stage in aggregation pipeline
+
+db.users1.aggregate([
+  {
+    $lookup: {
+      from: 'tasks1',
+      localField: '_id',
+      foreignField: 'userId',
+      as: 'userTasks'
+    }
+  }
+])
+
+db.tasks1.aggregate([
+  {
+    $lookup: {
+      from: 'users1',
+      localField: 'userId',
+      foreignField: '_id',
+      as: 'author'
+    }
+  }
+])
+
+// відобразити користувачів з їх тасками молодше 1991 р.н.
+// вивести ім'я, таски, без _id
+
+// послідовність:
+// 1 відібрати користувачів молодше 1991 р.н. ($match)
+// 2 з'єднати з їх тасками ($lookup)
+// 3 відобразити лише окремі поля ($project)
+
+db.users1.aggregate([
+  {
+    $match: {
+      birthday: { $gt: new Date('1991-12-31') }
+    }
+  },
+  {
+    $lookup: {
+      from: 'tasks1',
+      localField: '_id',
+      foreignField: 'userId',
+      as: 'userTasks'
+    }
+  },
+  {
+    $project: {
+      firstName: 1,
+      _id: 0,
+      userTasks: 1
+    }
+  }
+])
+mongo-intro.mongodb.js
+
+mongo-intro.mongodb.js. 
