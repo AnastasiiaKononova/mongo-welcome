@@ -1,9 +1,9 @@
 {
     "development": {
-        "host": "127.0.0.1",
-        "port": 27017,
-        "database": "mongo-welcome-db"
+       "uri": "mongodb+srv://nastya:Anastasiia123456789@cluster0.1mp7w.mongodb.net/mongo-welcome-db"
     },
     "test": {},
     "production": {}
 }
+
+

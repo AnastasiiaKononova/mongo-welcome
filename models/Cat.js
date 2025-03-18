@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
  
  /*
  Cat
- - name
- - age
+ - name - в імені не має бути цифр
+ - age - від 0 до 30
  - color
  - favouriteFood
  - favouriteGame
@@ -13,11 +13,16 @@ const mongoose = require('mongoose');
  const catSchema = mongoose.Schema({
      name: {
          type: String,
-         required: true
+         required: true,
+         validate: {
+            validator: (v) => /^[^0-9]+$/.test(v)
+         }
      },
      age: {
          type: Number,
-         required: true
+         required: true,
+         min: [0, 'Cat must exist'],
+         max: [30, 'Cat must not be older than 30']
      },
      color: {
          type: String
