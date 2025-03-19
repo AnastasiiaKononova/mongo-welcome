@@ -32,6 +32,10 @@ const mongoose = require('mongoose');
      },
      favouriteGame: {
          type: String
+     },
+     owner: {
+         type: mongoose.Schema.Types.ObjectId,
+         ref: 'Owner'
      }
  });
  
