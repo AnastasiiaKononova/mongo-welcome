@@ -1,1 +1,1 @@
-GET http://localhost:5000/api/cats/  HTTP/1.1
+GET http://localhost:5000/api/cats/67d986f5181978cf3e11285c  HTTP/1.1

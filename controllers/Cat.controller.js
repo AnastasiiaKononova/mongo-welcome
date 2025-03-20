@@ -23,7 +23,7 @@ const {Cat} = require('../models');
  module.exports.getOne = async (req, res, next) => {
      try {
          const {params: {catId}} = req;
-         const oneCat = await Cat.findById(catId);
+         const oneCat = await Cat.findById(catId).populate('owner');
          res.status(200).send({data: oneCat})
      } catch(error) {
          next(error)
